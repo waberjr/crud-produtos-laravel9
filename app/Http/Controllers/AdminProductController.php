@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ProductStoreRequest;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -11,7 +12,7 @@ use Illuminate\Support\Str;
 
 class AdminProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $products = Product::all();
         return view('admin.products', compact('products'));
@@ -24,15 +25,9 @@ class AdminProductController extends Controller
         ]);
     }
 
-    public function update(Product $product, Request $request)
+    public function update(Product $product, ProductStoreRequest $request)
     {
-        $input = $request->validate([
-            'name' => 'string|required',
-            'price' => 'string|required',
-            'stock' => 'integer|nullable',
-            'cover' => 'file|nullable',
-            'description' => 'string|nullable',
-        ]);
+        $input = $request->validated();
 
         if (isset($input['cover']) && $input['cover']->isValid()) {
             Storage::disk('public')->delete($product->cover ?? '');
@@ -51,21 +46,15 @@ class AdminProductController extends Controller
         return view('admin.product_create');
     }
 
-    public function store(Request $request)
+    public function store(ProductStoreRequest $request)
     {
-        $input = $request->validate([
-            'name' => 'string|required',
-            'price' => 'string|required',
-            'stock' => 'integer|nullable',
-            'cover' => 'file|nullable',
-            'description' => 'string|nullable',
-        ]);
+        $input = $request->validated();
 
         $input['slug'] = Str::slug($input['name']);
 
         if (isset($input['cover']) && $input['cover']->isValid()) {
             $file = $input['cover'];
-            $path = $file->store('products');
+            $path = $file->store('products', 'public');
             $input['cover'] = $path;
         }
 
